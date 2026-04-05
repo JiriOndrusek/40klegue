@@ -1,5 +1,8 @@
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { hexCenter, hexCorners, cornersToSvgPoints } from '../core/hexMath';
 import type { HexData } from '../data/types';
+import { HexTooltip } from './HexTooltip';
 
 interface Props {
   hex: HexData;
@@ -18,11 +21,11 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
   const coordLabel = `${String.fromCharCode(65 + hex.row)}${hex.col + 1}`;
   const clipId = `hc-${hex.col}-${hex.row}`;
 
-  // Proportional fill: stack slices bottom-to-top inside the hex shape.
-  // Hex bounding box (pointy-top): top = y - size, bottom = y + size, height = 2*size.
+  const [mouse, setMouse] = useState<{ x: number; y: number } | null>(null);
+
   const hexTop = y - size;
   const hexHeight = 2 * size;
-  const hexHalfWidth = Math.sqrt(3) * size; // wider than needed, clipped anyway
+  const hexHalfWidth = Math.sqrt(3) * size;
 
   let cumPct = 0;
   const sliceRects = hex.slices.map((slice) => {
@@ -31,6 +34,8 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
     cumPct += slice.percent;
     return { ...slice, rectY, rectH };
   });
+
+  const hasSlices = hex.slices.length > 0;
 
   if (selectionMode) {
     return (
@@ -57,55 +62,65 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
   }
 
   return (
-    <g>
-      <defs>
-        <clipPath id={clipId}>
-          <polygon points={points} />
-        </clipPath>
-      </defs>
-
-      {/* Base fill */}
-      <polygon
-        points={points}
-        fill="#333"
-        fillOpacity={0.4}
-        stroke="#888"
-        strokeWidth={1}
-      />
-
-      {/* Faction slices — filled bottom-to-top, clipped to hex shape */}
-      {sliceRects.map((s) => (
-        <rect
-          key={s.name}
-          x={x - hexHalfWidth}
-          y={s.rectY}
-          width={hexHalfWidth * 2}
-          height={s.rectH}
-          fill={s.color}
-          fillOpacity={0.75}
-          clipPath={`url(#${clipId})`}
-        />
-      ))}
-
-      {/* Hex border on top of fills */}
-      <polygon
-        points={points}
-        fill="none"
-        stroke="#888"
-        strokeWidth={1}
-      />
-
-      {/* Coordinate label */}
-      <text
-        x={x} y={y}
-        textAnchor="middle" dominantBaseline="middle"
-        fontSize={fontSize * 1.4}
-        fill="#fff"
-        stroke="#000" strokeWidth={0.4} paintOrder="stroke"
-        style={{ userSelect: 'none', pointerEvents: 'none' }}
+    <>
+      <g
+        onMouseMove={hasSlices ? (e) => setMouse({ x: e.clientX, y: e.clientY }) : undefined}
+        onMouseLeave={hasSlices ? () => setMouse(null) : undefined}
+        style={{ cursor: hasSlices ? 'crosshair' : 'default' }}
       >
-        {coordLabel}
-      </text>
-    </g>
+        <defs>
+          <clipPath id={clipId}>
+            <polygon points={points} />
+          </clipPath>
+        </defs>
+
+        {/* Base fill — transparent for unoccupied hexes */}
+        <polygon
+          points={points}
+          fill="transparent"
+          stroke="#888"
+          strokeWidth={1}
+        />
+
+        {/* Faction slices — filled bottom-to-top, clipped to hex shape */}
+        {sliceRects.map((s) => (
+          <rect
+            key={s.name}
+            x={x - hexHalfWidth}
+            y={s.rectY}
+            width={hexHalfWidth * 2}
+            height={s.rectH}
+            fill={s.color}
+            fillOpacity={0.4}
+            clipPath={`url(#${clipId})`}
+          />
+        ))}
+
+        {/* Hex border on top of fills */}
+        <polygon
+          points={points}
+          fill="none"
+          stroke={mouse ? '#fff' : '#888'}
+          strokeWidth={mouse ? 1.5 : 1}
+        />
+
+        {/* Coordinate label */}
+        <text
+          x={x} y={y}
+          textAnchor="middle" dominantBaseline="middle"
+          fontSize={fontSize * 1.4}
+          fill="#fff"
+          stroke="#000" strokeWidth={0.4} paintOrder="stroke"
+          style={{ userSelect: 'none', pointerEvents: 'none' }}
+        >
+          {coordLabel}
+        </text>
+      </g>
+
+      {mouse && hasSlices && createPortal(
+        <HexTooltip slices={hex.slices} x={mouse.x} y={mouse.y} />,
+        document.body,
+      )}
+    </>
   );
 }

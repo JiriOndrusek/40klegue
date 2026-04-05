@@ -4,6 +4,7 @@ import type { HexData, GridConfig } from './data/types';
 import { HexGrid } from './ui/HexGrid';
 import { CalibrationPanel } from './ui/CalibrationPanel';
 import { SelectionPanel } from './ui/SelectionPanel';
+import { LegendPanel } from './ui/LegendPanel';
 import VISIBLE_HEXES from './data/visibleHexes.json';
 import SIDE_COLORS from './data/sides.json';
 
@@ -34,6 +35,7 @@ export default function App() {
   const [config, setConfig] = useState<GridConfig>(INITIAL_CONFIG);
   const [calibrating, setCalibrating] = useState(false);
   const [selecting, setSelecting] = useState(false);
+  const [legend, setLegend] = useState(true);
   const [selectedCoords, setSelectedCoords] = useState<Set<string>>(
     () => new Set<string>(VISIBLE_HEXES),
   );
@@ -64,6 +66,7 @@ export default function App() {
   const handleKey = useCallback((e: KeyboardEvent) => {
     if (e.key === 'c' || e.key === 'C') setCalibrating((v) => !v);
     if (e.key === 's' || e.key === 'S') setSelecting((v) => !v);
+    if (e.key === 'l' || e.key === 'L') setLegend((v) => !v);
   }, []);
 
   useEffect(() => {
@@ -126,6 +129,7 @@ export default function App() {
         selectedHexes={selectedCoords}
         onToggleHex={toggleHex}
       />
+      {legend && <LegendPanel config={config} />}
       {calibrating && <CalibrationPanel config={config} onChange={setConfig} />}
       {selecting && <SelectionPanel selected={selectedCoords} />}
     </>

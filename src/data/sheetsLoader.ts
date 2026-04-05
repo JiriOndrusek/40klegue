@@ -1,35 +1,56 @@
 import Papa from 'papaparse';
-import type { HexData } from './types';
+import type { FactionSlice } from './types';
+
+export interface SheetRow {
+  coord: string;          // e.g. "G8"
+  slices: FactionSlice[];
+}
 
 /**
- * Fetch and parse hex data from a Google Sheets published CSV URL.
+ * Fetch and parse the occupation table from a Google Sheets published CSV.
  *
- * Expected sheet columns (case-insensitive):
- *   col, row, name, faction, color
+ * Expected format — first column is "Hex", remaining columns are faction names,
+ * cell values are percentages (0–100, may be empty = 0):
  *
- * To get the URL: in Google Sheets → File → Share → Publish to web
- * → select the sheet → CSV → Publish. Copy the resulting link.
+ *   Hex, Den, Axe, Rubi, ...
+ *   G8,  70,  30,      ,
+ *   M14,    , 40,      , 60
  */
-export async function loadHexesFromSheet(csvUrl: string): Promise<HexData[]> {
+export async function loadSheetRows(
+  csvUrl: string,
+  sideColors: Record<string, string>,
+): Promise<SheetRow[]> {
   const response = await fetch(csvUrl);
   if (!response.ok) {
     throw new Error(`Failed to fetch sheet: ${response.status} ${response.statusText}`);
   }
   const text = await response.text();
 
-  const result = Papa.parse<Record<string, string>>(text, {
-    header: true,
+  const result = Papa.parse<string[]>(text, {
     skipEmptyLines: true,
-    transformHeader: (h) => h.trim().toLowerCase(),
   });
 
-  return result.data
-    .map((row) => ({
-      col: parseInt(row['col'] ?? '0', 10),
-      row: parseInt(row['row'] ?? '0', 10),
-      name: (row['name'] ?? '').trim(),
-      faction: (row['faction'] ?? '').trim(),
-      color: (row['color'] ?? '#444444').trim(),
-    }))
-    .filter((h) => !isNaN(h.col) && !isNaN(h.row));
+  const rows = result.data;
+  if (rows.length < 2) return [];
+
+  // Header row: ["Hex", "Den", "Axe", ...]
+  const headers = rows[0].map((h) => h.trim());
+  const factionNames = headers.slice(1);
+
+  return rows.slice(1).map((row) => {
+    const coord = (row[0] ?? '').trim();
+    const slices: FactionSlice[] = [];
+    factionNames.forEach((name, i) => {
+      const raw = (row[i + 1] ?? '').trim();
+      const percent = raw === '' ? 0 : parseFloat(raw);
+      if (percent > 0) {
+        slices.push({
+          name,
+          percent,
+          color: sideColors[name] ?? '#888888',
+        });
+      }
+    });
+    return { coord, slices };
+  });
 }

@@ -1,9 +1,13 @@
+export interface FactionSlice {
+  name: string;
+  percent: number;
+  color: string;
+}
+
 export interface HexData {
   col: number;
   row: number;
-  name: string;
-  faction: string;
-  color: string; // CSS color string, e.g. "#3399ff"
+  slices: FactionSlice[];
 }
 
 export interface GridConfig {

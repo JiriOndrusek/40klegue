@@ -1,20 +1,20 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { loadHexesFromSheet } from './data/sheetsLoader';
+import { loadSheetRows } from './data/sheetsLoader';
 import type { HexData, GridConfig } from './data/types';
 import { HexGrid } from './ui/HexGrid';
 import { CalibrationPanel } from './ui/CalibrationPanel';
+import { SelectionPanel } from './ui/SelectionPanel';
+import VISIBLE_HEXES from './data/visibleHexes.json';
+import SIDE_COLORS from './data/sides.json';
 
 // ── Configuration ────────────────────────────────────────────────────────────
-// Publish your Google Sheet as CSV: File → Share → Publish to web → CSV
 const SHEET_CSV_URL =
-  'https://docs.google.com/spreadsheets/d/1K6zhkYVqTpI0MD5eq43uxBOLuqInEbAFXJuLRBKmo24/export?format=csv&gid=0';
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_azvvTFyHEjOR5-Ji5BpouBII9JjOSCPQqGzO7CkhtfJhSkig5BwNYOreBXvkXtTMCYQLCOJ5UG7p/pub?gid=0&single=true&output=csv';
 
 const BACKGROUND_URL = '/40klegue/map.png';
 
-// All values are in image-pixel coordinates (image is 1280×960).
-// offsetX/Y: top-left origin of the hex grid on the image.
-// hexSize: flat-top hex "radius" (center to corner) in pixels.
-// Tune these live by pressing C to open the calibration panel.
+// All values in image-pixel coordinates (image is 1280×960).
+// Tune live by pressing C to open the calibration panel.
 const INITIAL_CONFIG: GridConfig = {
   cols: 20,
   rows: 15,
@@ -27,16 +27,32 @@ const INITIAL_CONFIG: GridConfig = {
 type LoadState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ok'; hexes: HexData[] };
+  | { status: 'ok'; byCoord: Map<string, HexData> };
 
 export default function App() {
   const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' });
   const [config, setConfig] = useState<GridConfig>(INITIAL_CONFIG);
   const [calibrating, setCalibrating] = useState(false);
+  const [selecting, setSelecting] = useState(false);
+  const [selectedCoords, setSelectedCoords] = useState<Set<string>>(
+    () => new Set<string>(VISIBLE_HEXES),
+  );
 
   useEffect(() => {
-    loadHexesFromSheet(SHEET_CSV_URL)
-      .then((hexes) => setLoadState({ status: 'ok', hexes }))
+    loadSheetRows(SHEET_CSV_URL, SIDE_COLORS)
+      .then((rows) => {
+        const byCoord = new Map<string, HexData>();
+        for (const row of rows) {
+          // Parse "G8" → col=7 (8-1), row=6 (G=6)
+          const letter = row.coord[0]?.toUpperCase() ?? 'A';
+          const num = parseInt(row.coord.slice(1), 10);
+          if (isNaN(num)) continue;
+          const r = letter.charCodeAt(0) - 65;
+          const c = num - 1;
+          byCoord.set(row.coord, { col: c, row: r, slices: row.slices });
+        }
+        setLoadState({ status: 'ok', byCoord });
+      })
       .catch((err: unknown) =>
         setLoadState({
           status: 'error',
@@ -45,32 +61,44 @@ export default function App() {
       );
   }, []);
 
-  const toggleCalibration = useCallback((e: KeyboardEvent) => {
+  const handleKey = useCallback((e: KeyboardEvent) => {
     if (e.key === 'c' || e.key === 'C') setCalibrating((v) => !v);
+    if (e.key === 's' || e.key === 'S') setSelecting((v) => !v);
   }, []);
 
   useEffect(() => {
-    window.addEventListener('keydown', toggleCalibration);
-    return () => window.removeEventListener('keydown', toggleCalibration);
-  }, [toggleCalibration]);
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [handleKey]);
 
-  // Build the full grid from config, then overlay sheet data where available
-  const hexes = useMemo<HexData[]>(() => {
-    const sheetMap = new Map<string, HexData>();
-    if (loadState.status === 'ok') {
-      for (const h of loadState.hexes) sheetMap.set(`${h.col},${h.row}`, h);
-    }
+  const toggleHex = useCallback((coord: string) => {
+    setSelectedCoords((prev) => {
+      const next = new Set(prev);
+      if (next.has(coord)) next.delete(coord);
+      else next.add(coord);
+      return next;
+    });
+  }, []);
+
+  const allHexes = useMemo<HexData[]>(() => {
+    const byCoord = loadState.status === 'ok' ? loadState.byCoord : new Map<string, HexData>();
     const result: HexData[] = [];
     for (let row = 0; row < config.rows; row++) {
       for (let col = 0; col < config.cols; col++) {
-        const key = `${col},${row}`;
-        result.push(
-          sheetMap.get(key) ?? { col, row, name: '', faction: '', color: '#444444' },
-        );
+        const coord = `${String.fromCharCode(65 + row)}${col + 1}`;
+        result.push(byCoord.get(coord) ?? { col, row, slices: [] });
       }
     }
     return result;
   }, [loadState, config.cols, config.rows]);
+
+  const visibleHexes = useMemo<HexData[]>(() => {
+    if (selecting) return allHexes;
+    return allHexes.filter((h) => {
+      const coord = `${String.fromCharCode(65 + h.row)}${h.col + 1}`;
+      return selectedCoords.has(coord);
+    });
+  }, [allHexes, selecting, selectedCoords]);
 
   if (loadState.status === 'loading') {
     return (
@@ -90,8 +118,16 @@ export default function App() {
 
   return (
     <>
-      <HexGrid hexes={hexes} config={config} backgroundUrl={BACKGROUND_URL} />
+      <HexGrid
+        hexes={visibleHexes}
+        config={config}
+        backgroundUrl={BACKGROUND_URL}
+        selectionMode={selecting}
+        selectedHexes={selectedCoords}
+        onToggleHex={toggleHex}
+      />
       {calibrating && <CalibrationPanel config={config} onChange={setConfig} />}
+      {selecting && <SelectionPanel selected={selectedCoords} />}
     </>
   );
 }

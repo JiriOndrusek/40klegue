@@ -36,7 +36,7 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
   });
 
   const hasSlices = hex.slices.length > 0;
-  const dominant = hex.slices.find((s) => s.percent > 50) ?? null;
+  const dominant = hex.slices.find((s) => s.percent >= 50) ?? null;
 
   if (selectionMode) {
     return (
@@ -75,6 +75,7 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
           </clipPath>
         </defs>
 
+
         {/* Base fill — transparent for unoccupied hexes */}
         <polygon
           points={points}
@@ -97,14 +98,38 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
           />
         ))}
 
+        {/* Pulsing glow ring — thick animated stroke, rendered behind the crisp border */}
+        {dominant && (
+          <polygon
+            points={points}
+            fill="none"
+            stroke={dominant.color}
+            strokeWidth={14}
+            style={{ pointerEvents: 'none' }}
+          >
+            <animate attributeName="opacity" values="0.7;0;0.7" dur="2s" repeatCount="indefinite" />
+          </polygon>
+        )}
+
         {/* Hex border on top of fills */}
         <polygon
           points={points}
           fill="none"
           stroke={dominant ? dominant.color : mouse ? '#fff' : '#888'}
           strokeWidth={dominant ? 3 : mouse ? 1.5 : 1}
-          strokeOpacity={dominant ? 0.9 : 1}
         />
+
+        {/* Dominant faction center dot */}
+        {dominant && (
+          <circle
+            cx={x} cy={y + size * 0.55}
+            r={size * 0.36}
+            fill={dominant.color}
+            stroke="#000"
+            strokeWidth={0.8}
+            style={{ pointerEvents: 'none' }}
+          />
+        )}
 
         {/* Coordinate label */}
         <text

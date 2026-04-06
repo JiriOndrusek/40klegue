@@ -37,6 +37,7 @@ export function HexGrid({ hexes, config, backgroundUrl, selectionMode, selectedH
         viewBox={`0 0 ${IMG_W} ${IMG_H}`}
         preserveAspectRatio="xMidYMid meet"
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+        overflow="visible"
       >
         {/* offsetX/Y shifts the entire grid within image pixel space */}
         <g transform={`translate(${config.offsetX}, ${config.offsetY})`}>

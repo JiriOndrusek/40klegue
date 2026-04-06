@@ -1,10 +1,5 @@
 import Papa from 'papaparse';
-import type { FactionSlice } from './types';
-
-export interface SheetRow {
-  coord: string;          // e.g. "G8"
-  slices: FactionSlice[];
-}
+import type { RawSheetRow } from './types';
 
 /**
  * Fetch and parse the occupation table from a Google Sheets published CSV.
@@ -16,10 +11,7 @@ export interface SheetRow {
  *   G8,  70,  30,      ,
  *   M14,    , 40,      , 60
  */
-export async function loadSheetRows(
-  csvUrl: string,
-  sideColors: Record<string, string>,
-): Promise<SheetRow[]> {
+export async function loadSheetRows(csvUrl: string): Promise<RawSheetRow[]> {
   const response = await fetch(csvUrl, { cache: 'no-store' });
   if (!response.ok) {
     throw new Error(`Failed to fetch sheet: ${response.status} ${response.statusText}`);
@@ -39,18 +31,12 @@ export async function loadSheetRows(
 
   return rows.slice(1).map((row) => {
     const coord = (row[0] ?? '').trim();
-    const slices: FactionSlice[] = [];
+    const percents: Record<string, number> = {};
     factionNames.forEach((name, i) => {
       const raw = (row[i + 1] ?? '').trim();
       const percent = raw === '' ? 0 : parseFloat(raw);
-      if (percent > 0) {
-        slices.push({
-          name,
-          percent,
-          color: sideColors[name] ?? '#888888',
-        });
-      }
+      if (percent > 0) percents[name] = percent;
     });
-    return { coord, slices };
+    return { coord, percents };
   });
 }

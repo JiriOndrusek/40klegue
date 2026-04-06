@@ -4,6 +4,11 @@ export interface FactionSlice {
   color: string;
 }
 
+export interface RawSheetRow {
+  coord: string;
+  percents: Record<string, number>;
+}
+
 export interface HexData {
   col: number;
   row: number;

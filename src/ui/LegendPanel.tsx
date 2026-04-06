@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { hexCenter } from '../core/hexMath';
 import type { GridConfig } from '../data/types';
-import SIDE_COLORS from '../data/sides.json';
 
 interface Props {
   config: GridConfig;
+  clubs: Record<string, string>;
 }
 
 // Native image resolution — must match HexGrid
@@ -22,7 +22,7 @@ function toScreen(imgX: number, imgY: number, vw: number, vh: number) {
   };
 }
 
-export function LegendPanel({ config }: Props) {
+export function LegendPanel({ config, clubs }: Props) {
   const [vw, setVw] = useState(window.innerWidth);
   const [vh, setVh] = useState(window.innerHeight);
 
@@ -43,7 +43,7 @@ export function LegendPanel({ config }: Props) {
     vh,
   );
 
-  const sides = Object.entries(SIDE_COLORS as Record<string, string>);
+  const sides = Object.entries(clubs);
 
   return (
     <div

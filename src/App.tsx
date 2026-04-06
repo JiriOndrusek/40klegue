@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { loadSheetRows } from './data/sheetsLoader';
-import type { HexData, GridConfig } from './data/types';
+import type { HexData, FactionSlice, GridConfig, RawSheetRow } from './data/types';
 import { HexGrid } from './ui/HexGrid';
 import { CalibrationPanel } from './ui/CalibrationPanel';
 import { SelectionPanel } from './ui/SelectionPanel';
 import { LegendPanel } from './ui/LegendPanel';
+import { ClubsPanel } from './ui/ClubsPanel';
 import VISIBLE_HEXES from './data/visibleHexes.json';
 import SIDE_COLORS from './data/sides.json';
 
@@ -28,7 +29,7 @@ const INITIAL_CONFIG: GridConfig = {
 type LoadState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ok'; byCoord: Map<string, HexData> };
+  | { status: 'ok'; rawRows: RawSheetRow[] };
 
 export default function App() {
   const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' });
@@ -36,25 +37,15 @@ export default function App() {
   const [calibrating, setCalibrating] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [legend, setLegend] = useState(true);
+  const [clubs, setClubs] = useState<Record<string, string>>(SIDE_COLORS);
+  const [clubsOpen, setClubsOpen] = useState(true);
   const [selectedCoords, setSelectedCoords] = useState<Set<string>>(
     () => new Set<string>(VISIBLE_HEXES),
   );
 
   useEffect(() => {
-    loadSheetRows(SHEET_CSV_URL, SIDE_COLORS)
-      .then((rows) => {
-        const byCoord = new Map<string, HexData>();
-        for (const row of rows) {
-          // Parse "G8" → col=7 (8-1), row=6 (G=6)
-          const letter = row.coord[0]?.toUpperCase() ?? 'A';
-          const num = parseInt(row.coord.slice(1), 10);
-          if (isNaN(num)) continue;
-          const r = letter.charCodeAt(0) - 65;
-          const c = num - 1;
-          byCoord.set(row.coord, { col: c, row: r, slices: row.slices });
-        }
-        setLoadState({ status: 'ok', byCoord });
-      })
+    loadSheetRows(SHEET_CSV_URL)
+      .then((rawRows) => setLoadState({ status: 'ok', rawRows }))
       .catch((err: unknown) =>
         setLoadState({
           status: 'error',
@@ -67,6 +58,7 @@ export default function App() {
     if (e.key === 'c' || e.key === 'C') setCalibrating((v) => !v);
     if (e.key === 's' || e.key === 'S') setSelecting((v) => !v);
     if (e.key === 'l' || e.key === 'L') setLegend((v) => !v);
+    if (e.key === 'k' || e.key === 'K') setClubsOpen((v) => !v);
   }, []);
 
   useEffect(() => {
@@ -83,8 +75,26 @@ export default function App() {
     });
   }, []);
 
+  const byCoord = useMemo<Map<string, HexData>>(() => {
+    const rawRows = loadState.status === 'ok' ? loadState.rawRows : [];
+    const map = new Map<string, HexData>();
+    for (const row of rawRows) {
+      const letter = row.coord[0]?.toUpperCase() ?? 'A';
+      const num = parseInt(row.coord.slice(1), 10);
+      if (isNaN(num)) continue;
+      const r = letter.charCodeAt(0) - 65;
+      const c = num - 1;
+      const slices: FactionSlice[] = Object.entries(row.percents).map(([name, percent]) => ({
+        name,
+        percent,
+        color: clubs[name] ?? '#888888',
+      }));
+      map.set(row.coord, { col: c, row: r, slices });
+    }
+    return map;
+  }, [loadState, clubs]);
+
   const allHexes = useMemo<HexData[]>(() => {
-    const byCoord = loadState.status === 'ok' ? loadState.byCoord : new Map<string, HexData>();
     const result: HexData[] = [];
     for (let row = 0; row < config.rows; row++) {
       for (let col = 0; col < config.cols; col++) {
@@ -93,7 +103,7 @@ export default function App() {
       }
     }
     return result;
-  }, [loadState, config.cols, config.rows]);
+  }, [byCoord, config.cols, config.rows]);
 
   const visibleHexes = useMemo<HexData[]>(() => {
     if (selecting) return allHexes;
@@ -129,9 +139,10 @@ export default function App() {
         selectedHexes={selectedCoords}
         onToggleHex={toggleHex}
       />
-      {legend && <LegendPanel config={config} />}
+      {legend && <LegendPanel config={config} clubs={clubs} />}
       {calibrating && <CalibrationPanel config={config} onChange={setConfig} />}
       {selecting && <SelectionPanel selected={selectedCoords} />}
+      {clubsOpen && <ClubsPanel clubs={clubs} onChange={setClubs} />}
     </>
   );
 }

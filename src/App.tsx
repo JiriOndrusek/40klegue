@@ -38,7 +38,7 @@ export default function App() {
   const [selecting, setSelecting] = useState(false);
   const [legend, setLegend] = useState(true);
   const [clubs, setClubs] = useState<Record<string, string>>(SIDE_COLORS);
-  const [clubsOpen, setClubsOpen] = useState(true);
+  const [clubsOpen, setClubsOpen] = useState(false);
   const [selectedCoords, setSelectedCoords] = useState<Set<string>>(
     () => new Set<string>(VISIBLE_HEXES),
   );

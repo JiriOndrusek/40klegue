@@ -20,7 +20,7 @@ export async function loadSheetRows(
   csvUrl: string,
   sideColors: Record<string, string>,
 ): Promise<SheetRow[]> {
-  const response = await fetch(csvUrl);
+  const response = await fetch(csvUrl, { cache: 'no-store' });
   if (!response.ok) {
     throw new Error(`Failed to fetch sheet: ${response.status} ${response.statusText}`);
   }

@@ -36,6 +36,7 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
   });
 
   const hasSlices = hex.slices.length > 0;
+  const dominant = hex.slices.find((s) => s.percent > 50) ?? null;
 
   if (selectionMode) {
     return (
@@ -91,7 +92,7 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
             width={hexHalfWidth * 2}
             height={s.rectH}
             fill={s.color}
-            fillOpacity={0.4}
+            fillOpacity={dominant ? 0.65 : 0.4}
             clipPath={`url(#${clipId})`}
           />
         ))}
@@ -100,8 +101,9 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
         <polygon
           points={points}
           fill="none"
-          stroke={mouse ? '#fff' : '#888'}
-          strokeWidth={mouse ? 1.5 : 1}
+          stroke={dominant ? dominant.color : mouse ? '#fff' : '#888'}
+          strokeWidth={dominant ? 3 : mouse ? 1.5 : 1}
+          strokeOpacity={dominant ? 0.9 : 1}
         />
 
         {/* Coordinate label */}

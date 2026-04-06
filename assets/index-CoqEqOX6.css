@@ -1,0 +1,1 @@
+@keyframes hex-glow{0%,to{filter:drop-shadow(0 0 4px var(--glow-color))}50%{filter:drop-shadow(0 0 14px var(--glow-color))}}.hex-dominant{animation:hex-glow 2s ease-in-out infinite}

@@ -1,43 +1,16 @@
-import { useEffect, useState } from 'react';
 interface Props {
   clubs: Record<string, string>;
 }
 
-// Native image resolution — must match HexGrid
-const IMG_W = 1280;
-const IMG_H = 960;
-
-/** Converts an image-space point to screen pixels, accounting for SVG scaling. */
-function toScreen(imgX: number, imgY: number, vw: number, vh: number) {
-  const scale = Math.min(vw / IMG_W, vh / IMG_H);
-  const marginX = (vw - IMG_W * scale) / 2;
-  const marginY = (vh - IMG_H * scale) / 2;
-  return {
-    x: marginX + imgX * scale,
-    y: marginY + imgY * scale,
-  };
-}
-
 export function LegendPanel({ clubs }: Props) {
-  const [vw, setVw] = useState(window.innerWidth);
-  const [vh, setVh] = useState(window.innerHeight);
-
-  useEffect(() => {
-    const onResize = () => { setVw(window.innerWidth); setVh(window.innerHeight); };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  const screen = toScreen(0, 0, vw, vh);
-
   const sides = Object.entries(clubs);
 
   return (
     <div
       style={{
         position: 'fixed',
-        top: screen.y + 16,
-        left: screen.x + 16,
+        top: 16,
+        left: 16,
         zIndex: 100,
         background: 'rgba(0,0,0,0.85)',
         color: '#eee',

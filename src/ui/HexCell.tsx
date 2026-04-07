@@ -23,20 +23,6 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
 
   const [mouse, setMouse] = useState<{ x: number; y: number } | null>(null);
 
-  const hexTop = y - size;
-  const hexHeight = 2 * size;
-  const hexHalfWidth = Math.sqrt(3) * size;
-
-  const sortedSlices = [...hex.slices].sort((a, b) => b.percent - a.percent);
-
-  let cumPct = 0;
-  const sliceRects = sortedSlices.map((slice) => {
-    const rectY = hexTop + hexHeight * (1 - (cumPct + slice.percent) / 100);
-    const rectH = hexHeight * (slice.percent / 100);
-    cumPct += slice.percent;
-    return { ...slice, rectY, rectH };
-  });
-
   const hasSlices = hex.slices.length > 0;
   const dominant = hex.slices.find((s) => s.percent > 51) ?? null;
 

@@ -139,7 +139,7 @@ export default function App() {
         selectedHexes={selectedCoords}
         onToggleHex={toggleHex}
       />
-      {legend && <LegendPanel config={config} clubs={clubs} />}
+      {legend && <LegendPanel clubs={clubs} />}
       {calibrating && <CalibrationPanel config={config} onChange={setConfig} />}
       {selecting && <SelectionPanel selected={selectedCoords} />}
       {clubsOpen && <ClubsPanel clubs={clubs} onChange={setClubs} />}

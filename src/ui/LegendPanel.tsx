@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { GridConfig } from '../data/types';
-
 interface Props {
-  config: GridConfig;
   clubs: Record<string, string>;
 }
 
@@ -21,7 +18,7 @@ function toScreen(imgX: number, imgY: number, vw: number, vh: number) {
   };
 }
 
-export function LegendPanel({ config, clubs }: Props) {
+export function LegendPanel({ clubs }: Props) {
   const [vw, setVw] = useState(window.innerWidth);
   const [vh, setVh] = useState(window.innerHeight);
 

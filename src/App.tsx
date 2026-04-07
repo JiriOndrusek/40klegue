@@ -21,8 +21,8 @@ const INITIAL_CONFIG: GridConfig = {
   cols: 20,
   rows: 15,
   hexSize: 33.75,
-  offsetX: 28.67,
-  offsetY: 66.5,
+  offsetX: -1,
+  offsetY: 116.7,
 };
 // ─────────────────────────────────────────────────────────────────────────────
 

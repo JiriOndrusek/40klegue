@@ -147,7 +147,7 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
       </g>
 
       {mouse && hasSlices && createPortal(
-        <HexTooltip slices={hex.slices} x={mouse.x} y={mouse.y} />,
+        <HexTooltip slices={hex.slices} x={mouse.x} y={mouse.y} coord={coordLabel} />,
         document.body,
       )}
     </>

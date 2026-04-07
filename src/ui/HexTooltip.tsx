@@ -4,15 +4,24 @@ interface Props {
   slices: FactionSlice[];
   x: number;
   y: number;
+  coord: string;
 }
 
-export function HexTooltip({ slices, x, y }: Props) {
+const TOOLTIP_WIDTH = 190;
+const ROW_HEIGHT = 34;
+const V_PADDING = 20;
+
+export function HexTooltip({ slices, x, y, coord }: Props) {
+  const estimatedHeight = slices.length * ROW_HEIGHT + V_PADDING;
+  const left = x + 12 + TOOLTIP_WIDTH > window.innerWidth ? x - TOOLTIP_WIDTH - 4 : x + 12;
+  const top = y + 12 + estimatedHeight > window.innerHeight ? y - estimatedHeight - 4 : y + 12;
+
   return (
     <div
       style={{
         position: 'fixed',
-        left: x + 12,
-        top: y + 12,
+        left,
+        top,
         zIndex: 200,
         background: 'rgba(0,0,0,0.88)',
         color: '#eee',
@@ -24,6 +33,9 @@ export function HexTooltip({ slices, x, y }: Props) {
         minWidth: 160,
       }}
     >
+      <div style={{ fontWeight: 'bold', fontSize: 14, color: '#fff', marginBottom: 8, letterSpacing: 1 }}>
+        {coord}
+      </div>
       {slices.map((s) => (
         <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
           <div

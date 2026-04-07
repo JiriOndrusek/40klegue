@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { hexCenter } from '../core/hexMath';
 import type { GridConfig } from '../data/types';
 
 interface Props {
@@ -32,16 +31,7 @@ export function LegendPanel({ config, clubs }: Props) {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // G1 = col 0, row 6 (G is the 7th letter, 0-indexed = 6)
-  const G1_COL = 0;
-  const G1_ROW = 6;
-  const center = hexCenter(G1_COL, G1_ROW, config.hexSize);
-  const screen = toScreen(
-    center.x + config.offsetX,
-    center.y + config.offsetY,
-    vw,
-    vh,
-  );
+  const screen = toScreen(0, 0, vw, vh);
 
   const sides = Object.entries(clubs);
 
@@ -49,8 +39,8 @@ export function LegendPanel({ config, clubs }: Props) {
     <div
       style={{
         position: 'fixed',
-        top: screen.y,
-        left: 16,
+        top: screen.y + 16,
+        left: screen.x + 16,
         zIndex: 100,
         background: 'rgba(0,0,0,0.85)',
         color: '#eee',
@@ -59,7 +49,6 @@ export function LegendPanel({ config, clubs }: Props) {
         minWidth: 180,
         fontFamily: 'monospace',
         fontSize: 13,
-        transform: 'translate(100%, calc(-100% - 110px))',
       }}
     >
       <div style={{ marginBottom: 12, fontWeight: 'bold', fontSize: 14 }}>

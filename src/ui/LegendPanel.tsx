@@ -10,7 +10,7 @@ export function LegendPanel({ clubs }: Props) {
       style={{
         position: 'fixed',
         top: 16,
-        left: 16,
+        right: 16,
         zIndex: 100,
         background: 'rgba(0,0,0,0.85)',
         color: '#eee',

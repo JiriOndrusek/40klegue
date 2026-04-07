@@ -38,7 +38,7 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
   });
 
   const hasSlices = hex.slices.length > 0;
-  const dominant = hex.slices.find((s) => s.percent >= 50) ?? null;
+  const dominant = hex.slices.find((s) => s.percent > 51) ?? null;
 
   if (selectionMode) {
     return (
@@ -86,19 +86,17 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
           strokeWidth={1}
         />
 
-        {/* Faction slices — filled bottom-to-top, clipped to hex shape */}
-        {sliceRects.map((s) => (
-          <rect
-            key={s.name}
-            x={x - hexHalfWidth}
-            y={s.rectY}
-            width={hexHalfWidth * 2}
-            height={s.rectH}
-            fill={s.color}
-            fillOpacity={dominant ? 0.65 : 0.4}
-            clipPath={`url(#${clipId})`}
+        {/* Outlined circle for contested hexes (no dominant faction) */}
+        {!dominant && hasSlices && (
+          <circle
+            cx={x} cy={y + size * 0.55 - 3}
+            r={size * 0.36}
+            fill="none"
+            stroke="#000"
+            strokeWidth={1.5}
+            style={{ pointerEvents: 'none' }}
           />
-        ))}
+        )}
 
         {/* Pulsing glow ring — thick animated stroke, rendered behind the crisp border */}
         {dominant && (
@@ -124,7 +122,7 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
         {/* Dominant faction center dot */}
         {dominant && (
           <circle
-            cx={x} cy={y + size * 0.55}
+            cx={x} cy={y + size * 0.55 - 3}
             r={size * 0.36}
             fill={dominant.color}
             stroke="#000"

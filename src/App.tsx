@@ -36,7 +36,7 @@ export default function App() {
   const [config, setConfig] = useState<GridConfig>(INITIAL_CONFIG);
   const [calibrating, setCalibrating] = useState(false);
   const [selecting, setSelecting] = useState(false);
-  const [legend, setLegend] = useState(true);
+  const [legend, setLegend] = useState(window.innerWidth >= 1000);
   const [clubs, setClubs] = useState<Record<string, string>>(SIDE_COLORS);
   const [clubsOpen, setClubsOpen] = useState(false);
   const [selectedCoords, setSelectedCoords] = useState<Set<string>>(

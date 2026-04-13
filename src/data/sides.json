@@ -1,7 +1,9 @@
 {
-  "Den":   "#e67e22",
-  "Axe":   "#2980b9",
-  "Rubi":  "#c0392b",
-  "Tabor": "#27ae60",
-  "Oil":   "#8e44ad"
+  "Praha": "#e67e22",
+  "Plzeň": "#2980b9",
+  "Tábor": "#ca0000",
+  "Liberec": "#ffffff",
+  "Pardubice": "#800000",
+  "Brno": "#008000",
+  "Ostrava": "#888888"
 }

@@ -23,6 +23,20 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
 
   const [mouse, setMouse] = useState<{ x: number; y: number } | null>(null);
 
+  const hexTop = y - size;
+  const hexHeight = 2 * size;
+  const hexHalfWidth = Math.sqrt(3) * size;
+
+  const sortedSlices = [...hex.slices].sort((a, b) => b.percent - a.percent);
+
+  let cumPct = 0;
+  const sliceRects = sortedSlices.map((slice) => {
+    const rectY = hexTop + hexHeight * (1 - (cumPct + slice.percent) / 100);
+    const rectH = hexHeight * (slice.percent / 100);
+    cumPct += slice.percent;
+    return { ...slice, rectY, rectH };
+  });
+
   const hasSlices = hex.slices.length > 0;
   const dominant = hex.slices.find((s) => s.percent > 51) ?? null;
 
@@ -72,14 +86,29 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
           strokeWidth={1}
         />
 
-        {/* Outlined circle for contested hexes (no dominant faction) */}
+        {/* Faction slices — filled bottom-to-top, clipped to hex shape */}
+        {sliceRects.map((s) => (
+          <rect
+            key={s.name}
+            x={x - hexHalfWidth}
+            y={s.rectY}
+            width={hexHalfWidth * 2}
+            height={s.rectH}
+            fill={s.color}
+            fillOpacity={0.3}
+            clipPath={`url(#${clipId})`}
+          />
+        ))}
+
+        {/* Grey circle for contested hexes (no dominant faction) */}
         {!dominant && hasSlices && (
           <circle
-            cx={x} cy={y + size * 0.55 - 3}
+            cx={x} cy={y + size * 0.55 - 6}
             r={size * 0.36}
-            fill="none"
-            stroke="#000"
-            strokeWidth={1.5}
+            fill="#888"
+            fillOpacity={0.5}
+            stroke="#555"
+            strokeWidth={1}
             style={{ pointerEvents: 'none' }}
           />
         )}
@@ -90,7 +119,7 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
             points={points}
             fill="none"
             stroke={dominant.color}
-            strokeWidth={14}
+            strokeWidth={9}
             style={{ pointerEvents: 'none' }}
           >
             <animate attributeName="opacity" values="0.7;0;0.7" dur="2s" repeatCount="indefinite" />
@@ -108,7 +137,7 @@ export function HexCell({ hex, size, selectionMode, isSelected, onToggle }: Prop
         {/* Dominant faction center dot */}
         {dominant && (
           <circle
-            cx={x} cy={y + size * 0.55 - 3}
+            cx={x} cy={y + size * 0.55}
             r={size * 0.36}
             fill={dominant.color}
             stroke="#000"
